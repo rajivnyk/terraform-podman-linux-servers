@@ -1,8 +1,18 @@
+# Terraform
 .terraform/
 *.tfstate
 *.tfstate.*
-crash.log
-crash.*.log
-*.tfvars
-*.tfvars.json
-authorized_keys
+*.tfplan
+terraform.tfvars
+
+# SSH private keys
+*.pem
+id_rsa
+podman_task_key
+
+# Python
+__pycache__/
+*.pyc
+
+# Ansible
+*.retry

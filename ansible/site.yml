@@ -1,0 +1,77 @@
+
+---
+- name: Configure both Linux web servers
+  hosts: webservers
+  become: true
+  gather_facts: true
+
+  vars:
+    web_user: webadmin
+
+  tasks:
+    - name: Create web administration user
+      ansible.builtin.user:
+        name: "{{ web_user }}"
+        state: present
+        create_home: true
+        shell: /bin/bash
+
+    - name: Install Nginx
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+        update_cache: true
+
+    - name: Deploy Nginx configuration from template
+      ansible.builtin.template:
+        src: templates/nginx.conf.j2
+        dest: /etc/nginx/sites-available/default
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart Nginx
+
+    - name: Deploy server-specific HTML page
+      ansible.builtin.template:
+        src: templates/index.html.j2
+        dest: /var/www/html/index.html
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Validate Nginx configuration
+      ansible.builtin.command: nginx -t
+      changed_when: false
+
+    - name: Start and enable Nginx
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: true
+        
+    - name: Apply pending Nginx restarts
+      ansible.builtin.meta: flush_handlers
+
+    - name: Verify local HTTP endpoint
+      ansible.builtin.uri:
+        url: http://127.0.0.1/
+        method: GET
+        status_code: 200
+        return_content: true
+      register: http_result
+      changed_when: false
+
+    - name: Confirm the correct server page was returned
+      ansible.builtin.assert:
+        that:
+          - "'Ansible configuration successful!' in http_result.content"
+          - "('Server: ' ~ inventory_hostname) in http_result.content"
+        success_msg: "{{ inventory_hostname }} HTTP endpoint is working."
+        fail_msg: "{{ inventory_hostname }} returned unexpected HTTP content."
+
+  handlers:
+    - name: Restart Nginx
+      ansible.builtin.service:
+        name: nginx
+        state: restarted
+

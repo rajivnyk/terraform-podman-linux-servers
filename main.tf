@@ -58,6 +58,11 @@ resource "podman_container" "server1" {
     external = 2221
     ip       = "127.0.0.1"
   }
+  ports {
+    internal = 80
+    external = 8081
+    ip       = "127.0.0.1"
+  }
 }
 
 # 4. Create Linux server 2.
@@ -76,6 +81,11 @@ resource "podman_container" "server2" {
   ports {
     internal = 22
     external = 2222
+    ip       = "127.0.0.1"
+  }
+  ports {
+    internal = 80
+    external = 8082
     ip       = "127.0.0.1"
   }
 }
